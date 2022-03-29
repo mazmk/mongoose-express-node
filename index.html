@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Friends</title>
+    <style>
+      .form-group {
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+      form {
+        display: flex;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-content: space-between;
+        justify-content: flex-start;
+        align-items: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="crudForm">
+      <form onsubmit="submitForm(event)">
+        <div class="form-group">
+          <label for="name">Name</label>
+          <input required id="name" type="text" />
+        </div>
+        <div class="form-group">
+          <label for="age">Age</label>
+          <input required id="age" type="number" />
+        </div>
+        <div class="form-group">
+          <label for="isDeveloper">Developer</label>
+          <select required id="isDeveloper">
+            <option hidden value="">Please select</option>
+            <option value="true">True</option>
+            <option value="false">False</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="currentLocation">Current Location</label>
+          <input required id="currentLocation" type="text" />
+        </div>
+        <div class="form-group">
+          <button type="submit">Submit</button>
+        </div>
+      </form>
+    </div>
+    <div id="friendsList">
+      <h2>Friend List</h2>
+      <div>
+        <table border>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Age</th>
+              <th>Location</th>
+              <th>Developer</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="listF"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      const baseApiUrl = "http://localhost:3000/friends";
+      getAll();
+      let state = 0;
+      function getFriends(id = null) {
+        if (id) {
+          return fetch(baseApiUrl + "/" + id, {
+            method: "GET",
+            mode: "same-origin",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+        } else {
+          return fetch(baseApiUrl, {
+            method: "GET",
+            mode: "same-origin",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+        }
+      }
+
+      function submitForm(e) {
+        e.preventDefault();
+        let name = document.forms[0].name.value;
+        let age = document.forms[0].age.value;
+        let isDeveloper = document.forms[0].isDeveloper.value;
+        let currentLocation = document.forms[0].currentLocation.value;
+        let payload = JSON.parse(
+          JSON.stringify({ name, age, isDeveloper, currentLocation })
+        );
+        if (state == 0) {
+          // Create Mode
+          fetch(baseApiUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          })
+            .then((resp) => resp.json())
+            .then((data) => {
+              document.forms[0].reset();
+              getAll();
+            })
+            .catch((err) => console.log(err));
+        } else {
+          // Update Mode
+          fetch(baseApiUrl + "/" + state, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          })
+            .then((resp) => resp.json())
+            .then((data) => {
+              state = 0;
+              document.forms[0].reset();
+              getAll();
+            })
+            .catch((err) => console.log(err));
+        }
+      }
+      function getAll() {
+        getFriends()
+          .then((resp) => resp.json())
+          .then((data) => {
+            console.log(data);
+            let content = "";
+            data.forEach((item, index) => {
+              content += `
+                    <tr>
+                        <td>${item.name}</td>
+                        <td>${item.age}</td>
+                        <td>${item.currentLocation}</td>
+                        <td>${item.isDeveloper}</td>
+                        <td>
+                            <button class="${item._id}" onclick="updateFriend(this)">Update</button>
+                            <button class="${item._id}" onclick="deleteFriend(this)">Delete</button>
+                        </td>
+                    </tr>
+                  `;
+            });
+            listF.innerHTML = content;
+          })
+          .catch((e) => console.log(e));
+      }
+
+      function deleteFriend(ele) {
+        let id = ele.classList[0];
+        fetch(baseApiUrl + "/" + id, {
+          method: "DELETE",
+        })
+          .then((resp) => resp.json())
+          .then((data) => {
+            getAll();
+          })
+          .catch((err) => console.log(err));
+      }
+
+      function updateFriend(ele) {
+        /*
+          <td>${item.name}</td>
+                        <td>${item.age}</td>
+                        <td>${item.currentLocation}</td>
+                        <td>${item.isDeveloper}</td>
+          */
+
+        let id = ele.classList[0];
+        fetch(baseApiUrl + "/" + id, {
+          method: "GET",
+        })
+          .then((resp) => resp.json())
+          .then((data) => {
+            document.forms[0].name.value = data.name;
+            document.forms[0].age.value = data.age;
+            document.forms[0].isDeveloper.value = data.isDeveloper;
+            document.forms[0].currentLocation.value = data.currentLocation;
+            state = data._id;
+          })
+          .catch((err) => console.log(err));
+      }
+    </script>
+  </body>
+</html>

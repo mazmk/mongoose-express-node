@@ -33,12 +33,21 @@ app.patch("/:id", async(request, response) => {
     try {
         await friendsModel.findByIdAndUpdate(request.params.id, request.body);
         const friend = await friendsModel.findById(request.params.id);
-        await friendsModel.save();
         response.status(200).send(friend);
     } catch (error) {
         response.status(500).send(error);
     }
 });
+
+app.delete("/:id", async(request, response) => {
+    try {
+        await friendsModel.findByIdAndDelete(request.params.id);
+        response.status(200).json({info: "Deleted Successfully"});
+    } catch (error) {
+        response.status(500).send(error);
+    }
+});
+
 
 
 
